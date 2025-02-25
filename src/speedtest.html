@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Speedtest</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    .speed {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 30px;
+    }
+    .speed div {
+      text-align: center;
+    }
+    .speed h2 {
+      margin: 0;
+      color: #007BFF;
+    }
+    .speed p {
+      margin: 5px 0 0;
+      color: #666;
+    }
+    /* Spinner styles for the measuring state */
+    .spinner {
+      margin: 20px auto;
+      width: 60px;
+      height: 60px;
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #007BFF;
+      border-radius: 50%;
+      animation: spin 1.5s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .message {
+      color: #666;
+      font-size: 1.1em;
+      margin-top: 20px;
+    }
+  </style>
+  <!-- Include htmx -->
+  <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Speed Test Results</h1>
+    <!-- This div initially shows spinners, and htmx replaces it with the real results on page load -->
+    <div id="speed-test-results" hx-get="/speed?results=true" hx-trigger="load" hx-swap="outerHTML">
+      <div class="speed">
+        <div>
+          <div class="spinner"></div>
+          <p>Download Speed</p>
+        </div>
+        <div>
+          <div class="spinner"></div>
+          <p>Upload Speed</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
