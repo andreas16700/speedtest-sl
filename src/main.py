@@ -2,16 +2,7 @@ import os, speedtest
 
 # This Appwrite function will be executed every time your function is triggered
 def main(context):
-    for root, dirs, files in os.walk('.'):
-        context.log(f'Directory: {os.path.abspath(root)}')
 
-        for directory in dirs:
-            context.log(f'  Subdirectory: {directory}')
-
-        for file in files:
-            context.log(f'  File: {file}')
-
-        context.log()
     if context.req.query and 'results' in context.req.query:
         context.log(f"measuring..")
         st = speedtest.Speedtest(secure=True)
@@ -33,6 +24,11 @@ def main(context):
     </div>
     """, 200, {"content-type": "text/html"})
 
-    with open("speedtest.html", "r", encoding="utf-8") as file:
+    # Get the directory where the current script is located
+    script_dir = os.path.dirname(__file__)
+
+    # Build the full path to the file
+    file_path = os.path.join(script_dir, 'speedtest.html')
+    with open(file_path, "r", encoding="utf-8") as file:
         html_text = file.read()
         return context.res.text(html_text, 200, {"content-type": "text/html"})
