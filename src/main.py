@@ -2,8 +2,16 @@ import os, speedtest
 
 # This Appwrite function will be executed every time your function is triggered
 def main(context):
-    # You can use the Appwrite SDK to interact with other services
-    # For this example, we're using the Users service
+    for root, dirs, files in os.walk('.'):
+        context.log(f'Directory: {os.path.abspath(root)}')
+
+        for directory in dirs:
+            context.log(f'  Subdirectory: {directory}')
+
+        for file in files:
+            context.log(f'  File: {file}')
+
+        context.log()
     if context.req.query and 'results' in context.req.query:
         context.log(f"measuring..")
         st = speedtest.Speedtest(secure=True)
