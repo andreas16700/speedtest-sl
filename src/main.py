@@ -19,7 +19,6 @@ def trigger_update(context):
     collid = "speedtest"
 
     def create_doc(ts, host, server, latency, ul=None, dl=None):
-        global databases
         d = {
             'timestamp': ts,
             'host': host,
@@ -34,7 +33,6 @@ def trigger_update(context):
         return doc
 
     def update_doc(doc_id, ul=None, dl=None):
-        global databases
         d = {}
         if dl and dl != 0:
             d['download'] = dl
