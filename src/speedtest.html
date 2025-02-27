@@ -457,6 +457,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Download (Mbps)</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Upload (Mbps)</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Latency (ms)</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Server</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">`;
@@ -467,6 +468,7 @@
                 const downloadText = (o.download != null) ? o.download.toFixed(decPlaces) : '-';
                 const uploadText = (o.upload != null) ? o.upload.toFixed(decPlaces) : '-';
                 const latencyText = (o.latency != null) ? o.latency : '-';
+                const serverText = (o.server != null) ? o.server : '-';
 
                 html += `
     <tr class="transition-colors duration-500 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -474,6 +476,7 @@
       <td class="px-6 py-4 whitespace-nowrap ${(o.download != null && o.download === maxDownload) ? 'font-bold' : ''}">${downloadText}</td>
       <td class="px-6 py-4 whitespace-nowrap ${(o.upload != null && o.upload === maxUpload) ? 'font-bold' : ''}">${uploadText}</td>
       <td class="px-6 py-4 whitespace-nowrap ${(o.latency != null && o.latency === minLatency) ? 'font-bold' : ''}">${latencyText}</td>
+      <td class="px-6 py-4 whitespace-nowrap ">${serverText}</td>
     </tr>`;
             });
 

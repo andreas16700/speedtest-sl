@@ -61,7 +61,14 @@ def trigger_update(context):
 
 # This Appwrite function will be executed every time your function is triggered
 def main(context):
-
+    trigger = context.req.headers["x-appwrite-trigger"]
+    if trigger == "schedule":
+        context.log("this is a scheduled trigger. will do speedtest and save the results.")
+        download_speed, upload_speed = trigger_update(context)
+        context.log(f"measured download speed: {download_speed} upload speed: {upload_speed}")
+        return context.res.text("done", 200, {
+            'content-type': 'text/plain'
+        })
     if context.req.query and 'results' in context.req.query:
         context.log(f"measuring..")
         download_speed, upload_speed = trigger_update(context)
