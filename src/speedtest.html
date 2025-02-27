@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Speedtest</title>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Include htmx -->
   <script src="https://unpkg.com/htmx.org@1.9.3"></script>
@@ -12,7 +11,7 @@
 <body class="bg-gray-100 dark:bg-gray-900 font-sans">
   <div class="max-w-md mx-auto my-12 bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
     <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Speed Test Results</h1>
-    <div id="speed-test-results" hx-get="/speed?results=true" hx-swap="outerHTML">
+    <div id="speed-test-results" hx-get="/speed?results=true" hx-swap="outerHTML" hx-trigger="load">
       <div class="flex justify-around mt-8">
         <div>
           <div class="w-16 h-16 border-4 border-gray-200 dark:border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
