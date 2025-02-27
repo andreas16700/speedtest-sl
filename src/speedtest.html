@@ -1,44 +1,535 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Speedtest</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Include htmx -->
-  <script src="https://unpkg.com/htmx.org@1.9.3"></script>
-  <style>
-    /* Spinner styles for the measuring state */
-    .spinner {
-      margin: 20px auto;
-      width: 60px;
-      height: 60px;
-      border: 8px solid #f3f3f3;
-      border-top: 8px solid #007BFF;
-      border-radius: 50%;
-      animation: spin 1.5s linear infinite ;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Speed Test Result</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite"></script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 font-sans">
-  <div class="max-w-md mx-auto my-12 bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Speed Test Results</h1>
-    <div id="speed-test-results" hx-get="/speed?results=true" hx-swap="outerHTML" hx-trigger="load">
-      <div class="flex justify-around mt-8">
-        <div>
-          <div class="spinner"></div>
-          <p class="mt-2 text-gray-600 dark:text-gray-300">Download Speed</p>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex items-center justify-center">
+<div class="container mx-auto p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+      <!-- Login container -->
+<div id="loginContainer" class=" w-full  bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center">
+    <!-- Error message container, initially hidden -->
+    <div id="errorMsg"
+         class="hidden bg-red-100 dark:bg-red-900 border border-red-500 dark:border-red-400 text-red-700 dark:text-red-300 p-2 rounded mb-4"></div>
+
+    <h2 class="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">login dumbass</h2>
+    <input type="email" id="email" placeholder="Email"
+           class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded p-2 mb-4 w-full"/>
+    <input type="password" id="password" placeholder="Password"
+           class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded p-2 mb-4 w-full"/>
+    <button id="loginButton"
+            class="bg-blue-500 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2 rounded w-full">
+        Login
+    </button>
+</div>
+      <div id="resultContainer" class="hidden">
+
+        <!-- Download and Upload speeds displayed horizontally, centered -->
+        <div class="flex flex-col md:flex-row justify-center items-center md:space-x-60">
+            <!-- Download speed -->
+            <div class="text-center mb-6 md:mb-0">
+                <div id="downloadSpeed" class="text-9xl font-bold">-</div>
+                <div class="text-4xl">Mbps</div>
+                <div id="downloadMBs" class="text-2xl mt-1">- MB/s</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Download</div>
+            </div>
+            <!-- Upload speed -->
+            <div class="text-center">
+                <div id="uploadSpeed" class="text-9xl font-bold">-</div>
+                <div class="text-4xl">Mbps</div>
+                <div id="uploadMBs" class="text-2xl mt-1">- MB/s</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload</div>
+            </div>
         </div>
-        <div>
-          <div class="spinner w-16 h-16 border-5"></div>
-          <p class="mt-2 text-gray-600 dark:text-gray-300">Upload Speed</p>
+        <!-- Relative time caption -->
+        <div class="mt-4 text-center">
+            <div id="updateCaption" class="text-md text-gray-600 dark:text-gray-300">-</div>
         </div>
-      </div>
+        <!-- Latency displayed below the speeds -->
+        <div class="mt-8 flex justify-center">
+            <div class="text-center">
+                <div id="latencyValue" class="text-8xl font-bold">-</div>
+                <div class="text-3xl">ms</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Latency</div>
+            </div>
+        </div>
+        <!-- Error message container (hidden by default) -->
+        <div id="errorMessage"
+             class="mt-4 mx-auto max-w-md border border-red-500 bg-red-100 text-red-700 px-4 py-2 rounded opacity-0 transition-opacity duration-500"></div>
+        <!-- Measure button -->
+        <div class="mt-8 flex justify-center">
+            <button id="measureBtn"
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400">
+                Measure
+            </button>
+        </div>
+        </div>
     </div>
-  </div>
+    <!-- Container for historical data -->
+    <div id="historicalDataContainer" class="transition-opacity duration-500 mt-8"></div>
+</div>
+
+
+<script>
+    db_id = 'meta';
+    coll_id = 'speedtest';
+    // Initialize Appwrite client
+    const client = new Appwrite.Client();
+    client
+        .setEndpoint("https://aw.aloiz.cy/v1") // Your Appwrite endpoint
+        .setProject("infra"); // Your project ID
+    const account = new Appwrite.Account(client);
+    const databases = new Appwrite.Databases(client);
+    const functions = new Appwrite.Functions(client);
+
+    // Function to hide one element and show another with a fade transition.
+    function hideAndShowOtherElement(hideID, showID) {
+        const dur = 250;
+        var hideElem = document.getElementById(hideID);
+        var showElem = document.getElementById(showID);
+
+        // Set transition properties for both elements
+        hideElem.style.transition = `opacity ${dur}ms linear`;
+        showElem.style.transition = `opacity ${dur}ms linear`;
+
+        // Ensure showElem is hidden.
+        showElem.style.opacity = "0";
+
+        // Force a reflow to ensure the browser registers the initial styles
+        void hideElem.offsetWidth;
+        void showElem.offsetWidth;
+
+        hideElem.style.opacity = "0";
+
+        setTimeout(() => {
+            hideElem.style.display = "none";
+            showElem.style.display = "block";
+            setTimeout(() => {
+                showElem.style.opacity = "1";
+            }, dur);
+        }, dur);
+    }
+
+    // Helper: Smoothly animate a numeric value from start to end.
+    function animateValue(element, start, end, duration, decimalPlaces = 0, suffix = "") {
+        let startTime = null;
+
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            const progress = Math.min((timestamp - startTime) / duration, 1);
+            const currentValue = start + (end - start) * progress;
+            element.innerText = currentValue.toFixed(decimalPlaces) + suffix;
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        }
+
+        window.requestAnimationFrame(step);
+    }
+
+    // Function to update the download speed.
+    // Expects download_speed in Mbps.
+    function updateDownloadSpeed(download_speed) {
+        const downloadSpeedElem = document.getElementById("downloadSpeed");
+        const downloadMBsElem = document.getElementById("downloadMBs");
+
+        if (download_speed === undefined || download_speed === null || download_speed === '') {
+            downloadSpeedElem.innerHTML = "-";
+            downloadMBsElem.innerHTML = "-";
+        } else {
+            const currentMbps = parseFloat(downloadSpeedElem.innerText) || 0;
+            animateValue(downloadSpeedElem, currentMbps, download_speed, 1000, 0);
+            const currentMBs = parseFloat(downloadMBsElem.innerText) || 0;
+            animateValue(downloadMBsElem, currentMBs, download_speed / 8, 1000, 2, " MB/s");
+        }
+    }
+
+    // Function to update the upload speed.
+    // Expects upload_speed in Mbps.
+    function updateUploadSpeed(upload_speed) {
+        const uploadSpeedElem = document.getElementById("uploadSpeed");
+        const uploadMBsElem = document.getElementById("uploadMBs");
+
+        if (upload_speed === undefined || upload_speed === null || upload_speed === '') {
+            uploadSpeedElem.innerText = "-";
+            uploadMBsElem.innerText = "-";
+        } else {
+            const currentMbps = parseFloat(uploadSpeedElem.innerText) || 0;
+            animateValue(uploadSpeedElem, currentMbps, upload_speed, 1000, 0);
+            const currentMBs = parseFloat(uploadMBsElem.innerText) || 0;
+            animateValue(uploadMBsElem, currentMBs, upload_speed / 8, 1000, 2, " MB/s");
+        }
+
+
+    }
+
+    // Function to update the latency.
+    // Expects latency in ms.
+    function updateLatency(latency) {
+        const latencyElem = document.getElementById("latencyValue");
+        if (latency === undefined || latency === null || latency === '') {
+            latencyElem.innerText = "-"
+        } else {
+            const currentLatency = parseFloat(latencyElem.innerText) || 0;
+            animateValue(latencyElem, currentLatency, latency, 1000, 0);
+        }
+
+    }
+
+    // Function to update the "measured" date caption.
+    // Expects a date string in ISO format.
+    function updateMeasuredDate(dateStr) {
+        const updateCaptionElem = document.getElementById("updateCaption");
+        if (dateStr === undefined || dateStr === null || dateStr === '') {
+            updateCaptionElem.innerText = "-"
+        } else {
+            updateCaptionElem.innerText = "measured " + formatRelativeTime(dateStr);
+        }
+    }
+
+    // Provided function to format an ISO timestamp into a relative time string.
+    function formatRelativeTime(updateTimeStr) {
+        var updateTime = new Date(updateTimeStr);
+        var now = new Date();
+        var diff = Math.floor((now - updateTime) / 1000);
+        if (diff < 60) {
+            return diff + "s ago";
+        }
+        var minutes = Math.floor(diff / 60);
+        if (minutes < 60) {
+            var seconds = diff % 60;
+            return seconds > 0 ? minutes + "min " + seconds + "s ago" : minutes + "min ago";
+        }
+        var hours = Math.floor(minutes / 60);
+        if (hours < 24) {
+            var remMinutes = minutes % 60;
+            return remMinutes > 0 ? hours + "h " + remMinutes + "min ago" : hours + "h ago";
+        }
+        var days = Math.floor(hours / 24);
+        if (days < 14) {
+            if (days < 7) {
+                var remHours = hours % 24;
+                return remHours > 0 ? days + "d " + remHours + "h ago" : days + "d ago";
+            } else {
+                var weeks = Math.floor(days / 7);
+                var remDays = days % 7;
+                return remDays > 0 ? weeks + "w " + remDays + "d ago" : weeks + "w ago";
+            }
+        }
+        var day = updateTime.getDate();
+        var monthNames = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+        var month = monthNames[updateTime.getMonth()];
+        var year = updateTime.getFullYear();
+
+        function ordinalSuffix(n) {
+            var s = ["th", "st", "nd", "rd"],
+                v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+
+        return ordinalSuffix(day) + " " + month + " " + year;
+    }
+
+    // Simulated async updateResults function.
+    async function updateResults() {
+        // Simulate async delay.
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const result = await functions.createExecution(
+            'speedtest', // functionId
+            '', // body (optional)
+            false, // async (optional)
+            '/?results=true', // path (optional)
+            Appwrite.ExecutionMethod.GET, // method (optional)
+            null, // headers (optional)
+            null // scheduledAt (optional)
+        );
+        console.log('execution result', result);
+        // Uncomment the following line to simulate an error.
+        // throw new Error("Network error: Failed to update results.");
+        // Update results with new values.
+
+      // updateDownloadSpeed(200);
+        // updateUploadSpeed(100);
+        // updateLatency(30);
+        // updateMeasuredDate(new Date().toISOString());
+    }
+
+    // Measure button event listener.
+    document.getElementById("measureBtn").addEventListener("click", async function () {
+        const button = this;
+        const errorMessageElem = document.getElementById("errorMessage");
+        // Hide any previous error message.
+        errorMessageElem.style.opacity = 0;
+        errorMessageElem.innerText = "";
+        // Disable button and update its appearance.
+        button.disabled = true;
+        button.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 inline-block" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg> measuring`;
+
+        try {
+            await updateResults();
+        } catch (error) {
+            // On error, revert button state and display error message.
+            errorMessageElem.innerText = error.message || "An error occurred";
+            errorMessageElem.style.opacity = 1;
+        } finally {
+            button.disabled = false;
+            button.innerHTML = "Measure";
+        }
+    });
+
+    async function isLoggedIn() {
+        try {
+            const user = await account.get();
+            console.log("Logged in user:", user);
+            return true
+        } catch (error) {
+            console.error("Not logged in:", error);
+            // Not logged in: show login widget
+            return false;
+        }
+    }
+
+    // Async stub for login process that always throws an error for demonstration.
+    async function login(email, password) {
+
+        await account.createEmailPasswordSession(email, password);
+
+        const user = await account.get();
+        console.log(`Login successful: ${user}`)
+
+    }
+
+    async function entrypoint_logged_in() {
+        const r = await databases.listDocuments(db_id, coll_id)
+        console.log(r)
+        documents = r.documents.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        console.log(documents)
+        // ok so this is called at the start of the page.
+        // if we're here it means that there's at least one existing doc, and now we should display the latest one
+        // as the current one
+        if (r.total === 0){
+          return;
+        }
+        window.latestID = documents[0].$id;
+        if (r.total > 1) {
+            showHistoricalData(documents);
+        }
+        updateMeasuredDate(documents[0].timestamp);
+        updateLatency(documents[0].latency);
+        updateUploadSpeed(documents[0].upload);
+        updateDownloadSpeed(documents[0].download);
+    }
+
+
+    function receivedNewDoc(doc) {
+        updateCurrentResults(doc)
+        window.historicalResults.unshift(doc);
+        showHistoricalData(window.historicalResults)
+    }
+    function updateCurrentResults(doc){
+      updateMeasuredDate(doc.timestamp);
+        updateLatency(doc.latency);
+        updateUploadSpeed(doc.upload);
+        updateDownloadSpeed(doc.download);
+    }
+
+    function deleteDoc(newObj){
+      const index = window.historicalResults.findIndex(item => item.$id === newObj.$id);
+
+        if (index !== -1) {
+
+          // 2. Delete the object, preserving the order
+            window.historicalResults.splice(index, 1);
+            console.log("After deletion:", window.historicalResults);
+            if (window.latestID && window.latestID === newObj.$id) {
+              if (window.historicalResults && window.historicalResults.length > 0) {
+                window.latestID = window.historicalResults[0].$id;
+                updateCurrentResults(window.historicalResults[0])
+              }else{
+                blank = {}
+                updateCurrentResults(blank)
+              }
+          }
+        }
+
+    }
+
+    function gotDocFromEventEntrypoint(newObj) {
+        // Find the index of the object with the same $id
+        const index = window.historicalResults.findIndex(item => item.$id === newObj.$id);
+
+        if (index !== -1) {
+            // Print the found object
+          if (window.latestID && window.latestID === newObj.$id) {
+            updateCurrentResults(newObj);
+            console.log("Found object:", window.historicalResults[index]);
+
+            // 1. Replace it with newObj (preserving order)
+            window.historicalResults[index] = newObj;
+            console.log("After replacement:", window.historicalResults);
+          }
+
+        } else {
+            console.log("No object with $id", newObj.$id, "found in the window.historicalResultsay.");
+            receivedNewDoc(newObj);
+        }
+
+    }
+
+    // On document load, sequentially update each value with 500ms delays.
+    document.addEventListener("DOMContentLoaded", async function () {
+        if (!(await isLoggedIn())) {
+          return;
+        }
+        hideAndShowOtherElement('loginContainer', 'resultContainer');
+        await entrypoint_logged_in()
+        client.subscribe(`databases.${db_id}.collections.${coll_id}.documents`, response => {
+            console.log(response);
+            console.log(response.payload);
+            const actions = response.events;
+            if (actions.some(action => action.endsWith(".create"))) {
+                window.latestID = response.payload.$id
+                console.log("Found an element that ends with .create");
+                gotDocFromEventEntrypoint(response.payload)
+            }
+
+            if (actions.some(action => action.endsWith(".delete"))) {
+                console.log("Found an element that ends with .delete");
+                deleteDoc(response.payload);
+            }
+
+            if (actions.some(action => action.endsWith(".update"))) {
+                console.log("Found an element that ends with .update");
+                gotDocFromEventEntrypoint(response.payload)
+            }
+            showHistoricalData(window.historicalResults)
+        })
+
+
+    });
+
+    /**
+     * Renders historical speed test results in a pretty table with pagination.
+     * Displays 5 results per page and highlights the highest download, upload,
+     * and latency values (in the current batch) in bold.
+     *
+     * @param {Array} results - An array of objects with properties:
+     *   - o.timestamp (ISO formatted time string)
+     *   - o.download (download speed in Mbps)
+     *   - o.upload (upload speed in Mbps)
+     *   - o.latency (latency in ms)
+     * @param {number} [page=1] - The page number to display (5 items per page).
+     */
+    function showHistoricalData(results, page = 1) {
+        // Store results globally for use in pagination buttons.
+        window.historicalResults = results;
+
+        const container = document.getElementById("historicalDataContainer");
+        // Fade out existing content.
+        container.classList.add("opacity-0");
+        setTimeout(() => {
+            const startIndex = (page - 1) * 5;
+            const currentBatch = results.slice(startIndex, startIndex + 5);
+
+            // Determine maximum values in the current batch.
+            const maxDownload = Math.max(...currentBatch.map(o => o.download));
+            const maxUpload = Math.max(...currentBatch.map(o => o.upload));
+            const minLatency = Math.min(...currentBatch.map(o => o.latency));
+
+            // Build table HTML.
+            let html = `
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Time</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Download (Mbps)</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Upload (Mbps)</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Latency (ms)</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">`;
+            const decPlaces = 2
+            currentBatch.forEach(o => {
+                // Check each property: if it's defined, use it; otherwise, use '-'
+                const timestampText = (o.timestamp != null) ? formatRelativeTime(o.timestamp) : '-';
+                const downloadText = (o.download != null) ? o.download.toFixed(decPlaces) : '-';
+                const uploadText = (o.upload != null) ? o.upload.toFixed(decPlaces) : '-';
+                const latencyText = (o.latency != null) ? o.latency : '-';
+
+                html += `
+    <tr class="transition-colors duration-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+      <td class="px-6 py-4 whitespace-nowrap">${timestampText}</td>
+      <td class="px-6 py-4 whitespace-nowrap ${(o.download != null && o.download === maxDownload) ? 'font-bold' : ''}">${downloadText}</td>
+      <td class="px-6 py-4 whitespace-nowrap ${(o.upload != null && o.upload === maxUpload) ? 'font-bold' : ''}">${uploadText}</td>
+      <td class="px-6 py-4 whitespace-nowrap ${(o.latency != null && o.latency === minLatency) ? 'font-bold' : ''}">${latencyText}</td>
+    </tr>`;
+            });
+
+            html += `
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination controls -->
+        <div class="mt-4 flex justify-center space-x-2">`;
+
+            const totalPages = Math.ceil(results.length / 5);
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === page) {
+                    html += `<button class="px-3 py-1 bg-blue-500 text-white rounded transition-colors duration-300" disabled>${i}</button>`;
+                } else {
+                    html += `<button class="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-blue-500 hover:text-white transition-colors duration-300" onclick="showHistoricalData(window.historicalResults, ${i})">${i}</button>`;
+                }
+            }
+
+            html += `</div>`;
+
+            // Update container content and fade back in.
+            container.innerHTML = html;
+            container.classList.remove("opacity-0");
+        }, 500); // 500ms delay for fade-out effect.
+    }
+    // Attach event listener to the login button
+        document.getElementById('loginButton').addEventListener('click', async function () {
+            var email = document.getElementById('email').value;
+            var password = document.getElementById('password').value;
+            var loginButton = document.getElementById('loginButton');
+            var errorMsg = document.getElementById('errorMsg');
+
+            // Clear any previous error message
+            errorMsg.textContent = "";
+            errorMsg.classList.add('hidden');
+
+            // Disable the login button and show a loading indicator
+            loginButton.disabled = true;
+            loginButton.innerText = "Loading...";
+
+            try {
+                await login(email, password);
+                // If login is successful, fade from login form to OTP display
+                hideAndShowOtherElement('loginContainer', 'resultContainer');
+                await entrypoint_logged_in();
+            } catch (err) {
+                // Display the exception message in the error container
+                errorMsg.textContent = err.message;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                // Re-enable the login button and reset its text
+                loginButton.disabled = false;
+                loginButton.innerText = "Login";
+            }
+        });
+</script>
 </body>
 </html>
