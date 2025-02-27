@@ -7,6 +7,22 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Include htmx -->
   <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+  <style>
+    /* Spinner styles for the measuring state */
+    .spinner {
+      margin: 20px auto;
+      width: 60px;
+      height: 60px;
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #007BFF;
+      border-radius: 50%;
+      animation: spin 1.5s linear infinite ;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans">
   <div class="max-w-md mx-auto my-12 bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
@@ -14,11 +30,11 @@
     <div id="speed-test-results" hx-get="/speed?results=true" hx-swap="outerHTML" hx-trigger="load">
       <div class="flex justify-around mt-8">
         <div>
-          <div class="w-16 h-16 border-4 border-gray-200 dark:border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
+          <div class="spinner"></div>
           <p class="mt-2 text-gray-600 dark:text-gray-300">Download Speed</p>
         </div>
         <div>
-          <div class="w-16 h-16 border-4 border-gray-200 dark:border-gray-700 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
+          <div class="spinner w-16 h-16 border-5"></div>
           <p class="mt-2 text-gray-600 dark:text-gray-300">Upload Speed</p>
         </div>
       </div>

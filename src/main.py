@@ -1,6 +1,5 @@
 import os
 
-
 def trigger_update(context):
     import speedtest
     from appwrite.id import ID
