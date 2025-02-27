@@ -50,11 +50,11 @@ def trigger_update(context):
     server = f"{r.server['sponsor']} - {r.server['name']}"
     create_doc(ts=r.timestamp, host=r.server['host'], server=server, latency=r.server['latency'])
     download_speed = st.download() / 1e6  # Convert from bits/s to Mbps
-    print(f"measured download speed: {download_speed}")
+    context.log(f"measured download speed: {download_speed}")
     update_doc(doc_id=id, dl=download_speed)
 
     upload_speed = st.upload() / 1e6  # Convert from bits/s to Mbps
-    print(f"measured upload speed: {upload_speed}")
+    context.log(f"measured upload speed: {upload_speed}")
     update_doc(doc_id=id, ul=upload_speed)
     return download_speed, upload_speed
 
