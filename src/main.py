@@ -92,6 +92,12 @@ def main(context):
 
     # Build the full path to the file
     file_path = os.path.join(script_dir, 'speedtest.html')
+    # .set_endpoint(os.environ["APPWRITE_FUNCTION_API_ENDPOINT"])
+    # .set_project(os.environ["APPWRITE_FUNCTION_PROJECT_ID"])
     with open(file_path, "r", encoding="utf-8") as file:
-        html_text = file.read()
+        conf = f""".setEndpoint("{os.environ["APPWRITE_FUNCTION_API_ENDPOINT"]}")
+                .setProject("{os.environ["APPWRITE_FUNCTION_PROJECT_ID"]}");
+                """
+        html_text = file.read().replace("[AW_CONF]", conf)
+
         return context.res.text(html_text, 200, {"content-type": "text/html"})

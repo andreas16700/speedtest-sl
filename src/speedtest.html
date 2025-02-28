@@ -80,8 +80,7 @@
     // Initialize Appwrite client
     const client = new Appwrite.Client();
     client
-        .setEndpoint("https://aw.aloiz.cy/v1") // Your Appwrite endpoint
-        .setProject("infra"); // Your project ID
+        [AW_CONF]
     const account = new Appwrite.Account(client);
     const databases = new Appwrite.Databases(client);
     const functions = new Appwrite.Functions(client);
@@ -241,7 +240,6 @@
     async function updateResults() {
         // Simulate async delay.
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
         const result = await functions.createExecution(
             'speedtest', // functionId
             '', // body (optional)
@@ -333,6 +331,9 @@
 
 
     function receivedNewDoc(doc) {
+        if (!window.latestID){
+            window.latestID = doc.$id;
+        }
         updateCurrentResults(doc)
         window.historicalResults.unshift(doc);
         showHistoricalData(window.historicalResults)
