@@ -92,8 +92,6 @@ def main(context):
 
     # Build the full path to the file
     file_path = os.path.join(script_dir, 'speedtest.html')
-    # .set_endpoint(os.environ["APPWRITE_FUNCTION_API_ENDPOINT"])
-    # .set_project(os.environ["APPWRITE_FUNCTION_PROJECT_ID"])
     with open(file_path, "r", encoding="utf-8") as file:
         conf = f""".setEndpoint("{os.environ["APPWRITE_FUNCTION_API_ENDPOINT"]}")
                 .setProject("{os.environ["APPWRITE_FUNCTION_PROJECT_ID"]}");
