@@ -334,7 +334,7 @@
         if (!window.latestID){
             window.latestID = doc.$id;
         }
-        updateCurrentResults(doc)
+        updateCurrentResults(doc);
         window.historicalResults.unshift(doc);
         showHistoricalData(window.historicalResults)
     }
