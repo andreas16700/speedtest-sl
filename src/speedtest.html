@@ -368,6 +368,9 @@
 
     function gotDocFromEventEntrypoint(newObj) {
         // Find the index of the object with the same $id
+        if (!window.historicalResults){
+            window.historicalResults = [];
+        }
         const index = window.historicalResults.findIndex(item => item.$id === newObj.$id);
 
         if (index !== -1) {
